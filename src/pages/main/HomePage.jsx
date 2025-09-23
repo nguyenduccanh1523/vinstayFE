@@ -23,7 +23,12 @@ const RoomCard = ({ img, title, price }) => (
       </div>
       <p className="mt-1 text-sm text-slate-600">City view • King bed • 30m²</p>
       <button className="mt-4 h-10 w-full rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">
-        View Details
+        <a
+          href="/room-detail/1"
+          className="block w-full h-full grid place-items-center"
+        >
+          View Details
+        </a>
       </button>
     </div>
   </div>
@@ -116,7 +121,7 @@ const HomePage = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
           <div className="flex items-end justify-between">
             <h2 className="text-2xl font-semibold">Featured Rooms</h2>
-            <a href="#" className="text-sm text-slate-700 hover:underline">
+            <a href="/rooms" className="text-sm text-slate-700 hover:underline">
               See all rooms
             </a>
           </div>
@@ -181,10 +186,10 @@ const HomePage = () => {
                 Create Account
               </a>
               <a
-                href="/book"
+                href="/hotels"
                 className="h-11 rounded-xl border border-slate-300 px-5 grid place-items-center font-medium hover:bg-slate-50"
               >
-                Browse Offers
+                Browse Hotels
               </a>
             </div>
           </div>

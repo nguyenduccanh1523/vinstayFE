@@ -34,7 +34,10 @@ const Header = () => {
           <span className="text-xl font-semibold tracking-tight">VinnStay</span>
         </a>
         <nav className="hidden md:flex items-center gap-6 text-sm">
-          <a className="hover:text-slate-900 text-slate-600" href="#rooms">
+          <a className="hover:text-slate-900 text-slate-600" href="/hotels">
+            Hotels
+          </a>
+          <a className="hover:text-slate-900 text-slate-600" href="/rooms">
             Rooms
           </a>
           <a className="hover:text-slate-900 text-slate-600" href="#offers">
@@ -158,7 +161,10 @@ const Header = () => {
       {open && (
         <div className="md:hidden border-t border-slate-200 bg-white">
           <nav className="mx-auto max-w-7xl px-4 py-3 grid gap-3 text-sm">
-            <a className="py-2" href="#rooms">
+            <a className="py-2" href="/hotels">
+              Hotels
+            </a>
+            <a className="py-2" href="/rooms">
               Rooms
             </a>
             <a className="py-2" href="#offers">

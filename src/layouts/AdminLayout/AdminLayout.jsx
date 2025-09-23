@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import Header from "../../components/Sidebar/Header";
 import Footer from "../../components/Sidebar/Footer";
 
-const NavItem = ({ href, label, icon, active }) => (
-  <a
-    href={href}
+const NavItem = ({ to, label, icon, active }) => (
+  <Link
+    to={to}
     className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition border border-transparent
 ${active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
     aria-current={active ? "page" : undefined}
@@ -18,7 +18,7 @@ ${active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
       {icon}
     </span>
     <span className="font-medium">{label}</span>
-  </a>
+  </Link>
 );
 
 const Sidebar = ({ open, setOpen }) => {
@@ -40,8 +40,8 @@ transition-transform duration-300 ease-in-out md:translate-x-0 ${
       aria-label="Admin sidebar"
     >
       <div className="flex items-center justify-between px-1">
-        <a
-          href="/admin"
+        <Link
+          to="/admin"
           className="flex items-center gap-2"
           aria-label="Admin home"
         >
@@ -51,7 +51,7 @@ transition-transform duration-300 ease-in-out md:translate-x-0 ${
           <span className="text-lg font-semibold tracking-tight">
             VinnStay Admin
           </span>
-        </a>
+        </Link>
         <button
           className="md:hidden h-9 w-9 grid place-items-center rounded-lg border hover:bg-slate-100"
           onClick={() => setOpen(false)}
@@ -63,49 +63,55 @@ transition-transform duration-300 ease-in-out md:translate-x-0 ${
 
       <nav className="mt-6 grid gap-2" role="navigation">
         <NavItem
-          href="/admin"
+          to="/admin"
           label="Dashboard"
           icon={<span>📊</span>}
           active={isActive("/admin")}
         />
         <NavItem
-          href="/admin/bookings"
+          to="/admin/bookings"
           label="Bookings"
           icon={<span>🛎️</span>}
           active={isActive("/admin/bookings")}
         />
         <NavItem
-          href="/admin/rooms"
+          to="/admin/hotels"
+          label="Hotels"
+          icon={<span>🏨</span>}
+          active={isActive("/admin/hotels")}
+        />
+        <NavItem
+          to="/admin/rooms"
           label="Rooms"
           icon={<span>🛏️</span>}
           active={isActive("/admin/rooms")}
         />
         <NavItem
-          href="/admin/customers"
+          to="/admin/customers"
           label="Customers"
           icon={<span>👤</span>}
           active={isActive("/admin/customers")}
         />
         <NavItem
-          href="/admin/roles"
+          to="/admin/roles"
           label="Roles"
           icon={<span>🔐</span>}
           active={isActive("/admin/roles")}
         />
         <NavItem
-          href="/admin/payments"
+          to="/admin/payments"
           label="Payments"
           icon={<span>💳</span>}
           active={isActive("/admin/payments")}
         />
         <NavItem
-          href="/admin/offers"
+          to="/admin/offers"
           label="Offers"
           icon={<span>🏷️</span>}
           active={isActive("/admin/offers")}
         />
         <NavItem
-          href="/admin/settings"
+          to="/admin/settings"
           label="Settings"
           icon={<span>⚙️</span>}
           active={isActive("/admin/settings")}
@@ -131,6 +137,7 @@ const Topbar = ({ setOpen }) => {
     if (path === "/admin") return "Dashboard";
     if (path.includes("/roles")) return "Roles";
     if (path.includes("/bookings")) return "Bookings";
+    if (path.includes("/hotels")) return "Hotels";
     if (path.includes("/rooms")) return "Rooms";
     if (path.includes("/customers")) return "Customers";
     if (path.includes("/payments")) return "Payments";
