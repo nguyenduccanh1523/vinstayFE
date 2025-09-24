@@ -7,6 +7,12 @@ export const roomApi = {
     return res.data;
   },
 
+  // ⬇️ Thêm: lấy rooms theo hotel
+  getRoomsByHotel: async (hotelId) => {
+    const res = await axiosConfig.get(`rooms/hotel/${hotelId}`);
+    return res.data;
+  },
+
   // Get room by id
   getRoomById: async (id) => {
     const res = await axiosConfig.get(`rooms/${id}`);

@@ -7,6 +7,11 @@ export const hotelApi = {
     return res.data;
   },
 
+  getHotelByOwner: async (ownerId) => {
+    const res = await axiosConfig.get(`hotels/owner/${ownerId}`);
+    return res.data;
+  },
+
   getHotelById: async (id) => {
     const res = await axiosConfig.get(`hotels/${id}`);
     return res.data;
@@ -32,4 +37,6 @@ export const hotelApi = {
     const res = await axiosConfig.delete(`hotels/${id}`);
     return res.data;
   },
+
+
 };

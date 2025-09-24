@@ -12,6 +12,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const isAdmin = user?.role_id?.name === "admin";
+  const isHotelOwner = user?.role_id?.name === "hotel_owner";
 
   const handleLogout = () => {
     dispatch(logout());
@@ -61,6 +62,15 @@ const Header = () => {
               href="/management"
             >
               Management
+            </a>
+          )}
+
+          {isHotelOwner && (
+            <a
+              className="hover:text-slate-900 text-slate-600"
+              href="/manage-hotel"
+            >
+              Manage Hotel
             </a>
           )}
         </nav>
@@ -113,6 +123,14 @@ const Header = () => {
                       className="block px-4 py-2 text-sm hover:bg-slate-50"
                     >
                       Management
+                    </a>
+                  )}
+                  {isHotelOwner && (
+                    <a
+                      className="block px-4 py-2 text-sm hover:bg-slate-50"
+                      href="/manage-hotel"
+                    >
+                      Manage Hotel
                     </a>
                   )}
                   <button
@@ -185,6 +203,14 @@ const Header = () => {
             {isAdmin && (
               <a className="py-2" href="/management">
                 Management
+              </a>
+            )}
+            {isHotelOwner && (
+              <a
+                className="hover:text-slate-900 text-slate-600"
+                href="/manage-hotel"
+              >
+                Manage Hotel
               </a>
             )}
             <div className="pt-2 grid grid-cols-2 gap-3">

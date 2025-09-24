@@ -39,7 +39,7 @@ const HomePage = () => {
     <>
       <section className="relative">
         <img
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-E4GO5a7loABP-CIsGOF40lXynjt3MR0sRA&s"
+          src="https://saleotahotel.vn/wp-content/uploads/2024/03/hotel-la-gi.jpg"
           alt="Hotel lobby with warm lights"
           className="h-[68vh] w-full object-cover"
         />
