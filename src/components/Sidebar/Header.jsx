@@ -59,7 +59,7 @@ const Header = () => {
           {isAdmin && (
             <a
               className="hover:text-slate-900 text-slate-600"
-              href="/management"
+              href="/admin"
             >
               Management
             </a>
@@ -201,7 +201,7 @@ const Header = () => {
               Contact
             </a>
             {isAdmin && (
-              <a className="py-2" href="/management">
+              <a className="py-2" href="/admin">
                 Management
               </a>
             )}
