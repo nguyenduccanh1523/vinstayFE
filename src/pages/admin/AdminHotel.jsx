@@ -12,6 +12,7 @@ import {
   Image,
   Tag,
   Upload,
+  Checkbox,
 } from "antd";
 import {
   PlusOutlined,
@@ -26,6 +27,35 @@ import { hotelApi } from "../../apis/hotelApi";
 const { TextArea } = Input;
 const { Option } = Select;
 const { Search } = Input;
+
+// Predefined amenities list
+const AMENITIES_LIST = [
+  "Wifi",
+  "Kitchen",
+  "Jacuzzi",
+  "Balcony",
+  "TV",
+  "AC",
+  "Safe",
+  "Spa",
+  "Pool",
+  "Parking",
+  "Restaurant",
+  "Gym",
+  "Beach",
+  "Bar",
+  "Bida",
+];
+
+// Predefined cities list
+const CITIES_LIST = [
+  "Hà Nội",
+  "TP.HCM",
+  "Đà Nẵng",
+  "Sapa",
+  "Hội An",
+  "Nha Trang",
+];
 
 const AdminHotel = () => {
   const [hotels, setHotels] = useState([]);
@@ -75,6 +105,8 @@ const AdminHotel = () => {
   const handleCreate = () => {
     setEditingHotel(null);
     form.resetFields();
+    // Set default country when creating
+    form.setFieldsValue({ country: "VietNam" });
     setFileList([]);
     setModalVisible(true);
   };
@@ -98,13 +130,12 @@ const AdminHotel = () => {
       description: record.description,
       address: record.address,
       city: record.city,
-      country: record.country,
+      country: record.country || "VietNam",
       latitude: record.latitude,
       longitude: record.longitude,
-      check_in_time: record.check_in_time,
-      check_out_time: record.check_out_time,
       status: record.status,
-      images: record.images || [], // Add images to form values
+      amenities: record.amenities || [],
+      images: record.images || [],
     });
 
     setModalVisible(true);
@@ -137,15 +168,22 @@ const AdminHotel = () => {
       formData.append("country", values.country);
       formData.append("latitude", values.latitude);
       formData.append("longitude", values.longitude);
-      formData.append("check_in_time", values.check_in_time);
-      formData.append("check_out_time", values.check_out_time);
       formData.append("status", values.status);
+
+      // Add amenities to FormData
+      if (values.amenities && values.amenities.length > 0) {
+        formData.append("amenities", JSON.stringify(values.amenities));
+      }
 
       // Add files to FormData
       fileList.forEach((file, index) => {
         if (file.originFileObj) {
           // New files to upload
-          formData.append("images", file.originFileObj, file.name || `image-${index}.png`);
+          formData.append(
+            "images",
+            file.originFileObj,
+            file.name || `image-${index}.png`
+          );
         } else if (file.url && editingHotel) {
           // Existing files (for update operations)
           formData.append("existingImages", file.url);
@@ -230,6 +268,30 @@ const AdminHotel = () => {
       title: "Country",
       dataIndex: "country",
       key: "country",
+    },
+    {
+      title: "Amenities",
+      dataIndex: "amenities",
+      key: "amenities",
+      width: 200,
+      render: (amenities) => (
+        <div className="flex flex-wrap gap-1">
+          {amenities && amenities.length > 0 ? (
+            amenities.slice(0, 3).map((amenity, index) => (
+              <Tag key={index} size="small" color="blue">
+                {amenity}
+              </Tag>
+            ))
+          ) : (
+            <span className="text-gray-400">No amenities</span>
+          )}
+          {amenities && amenities.length > 3 && (
+            <Tag size="small" color="default">
+              +{amenities.length - 3}
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: "Rating",
@@ -400,9 +462,15 @@ const AdminHotel = () => {
             <Form.Item
               name="city"
               label="City"
-              rules={[{ required: true, message: "Please input city!" }]}
+              rules={[{ required: true, message: "Please select city!" }]}
             >
-              <Input />
+              <Select placeholder="Select a city">
+                {CITIES_LIST.map((city) => (
+                  <Option key={city} value={city}>
+                    {city}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item
@@ -410,7 +478,7 @@ const AdminHotel = () => {
               label="Country"
               rules={[{ required: true, message: "Please input country!" }]}
             >
-              <Input />
+              <Input defaultValue="VietNam" readOnly />
             </Form.Item>
           </div>
 
@@ -432,27 +500,17 @@ const AdminHotel = () => {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item
-              name="check_in_time"
-              label="Check-in Time"
-              rules={[
-                { required: true, message: "Please input check-in time!" },
-              ]}
-            >
-              <Input placeholder="14:00" />
-            </Form.Item>
-
-            <Form.Item
-              name="check_out_time"
-              label="Check-out Time"
-              rules={[
-                { required: true, message: "Please input check-out time!" },
-              ]}
-            >
-              <Input placeholder="12:00" />
-            </Form.Item>
-          </div>
+          <Form.Item name="amenities" label="Amenities">
+            <Checkbox.Group>
+              <div className="grid grid-cols-3 gap-2">
+                {AMENITIES_LIST.map((amenity) => (
+                  <Checkbox key={amenity} value={amenity}>
+                    {amenity}
+                  </Checkbox>
+                ))}
+              </div>
+            </Checkbox.Group>
+          </Form.Item>
 
           <Form.Item
             name="status"
@@ -527,12 +585,6 @@ const AdminHotel = () => {
               <div>
                 <strong>Rating:</strong> {viewingHotel.rating || "Not rated"}
               </div>
-              <div>
-                <strong>Check-in:</strong> {viewingHotel.check_in_time}
-              </div>
-              <div>
-                <strong>Check-out:</strong> {viewingHotel.check_out_time}
-              </div>
             </div>
 
             <div>
@@ -541,6 +593,20 @@ const AdminHotel = () => {
             <div>
               <strong>Description:</strong> {viewingHotel.description}
             </div>
+
+            {viewingHotel.amenities && viewingHotel.amenities.length > 0 && (
+              <div>
+                <strong>Amenities:</strong>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {viewingHotel.amenities.map((amenity, index) => (
+                    <Tag key={index} color="blue">
+                      {amenity}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <strong>Owner:</strong> {viewingHotel.owner_id?.username} (
               {viewingHotel.owner_id?.email})

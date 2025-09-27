@@ -151,7 +151,7 @@ const Header = () => {
                 Sign in
               </a>
               <a
-                href="/book"
+                href="/register"
                 className="inline-flex h-9 items-center rounded-xl bg-slate-900 px-4 text-white text-sm font-medium hover:bg-slate-800"
               >
                 Book Now

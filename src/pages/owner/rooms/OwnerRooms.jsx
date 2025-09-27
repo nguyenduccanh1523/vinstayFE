@@ -149,6 +149,22 @@ export default function OwnerRooms() {
         responsive: ["sm"],
       },
       {
+        title: "Area & View",
+        dataIndex: "room_area",
+        sorter: (a, b) => (a.room_area || 0) - (b.room_area || 0),
+        render: (area, record) => (
+          <div className="flex flex-col">
+            <span className="text-sm">{area ? `${area}m²` : "—"}</span>
+            {record.view && (
+              <Tag size="small" color="blue">
+                {record.view}
+              </Tag>
+            )}
+          </div>
+        ),
+        responsive: ["md"],
+      },
+      {
         title: "Capacity",
         dataIndex: "capacity",
         sorter: (a, b) => (a.capacity || 0) - (b.capacity || 0),
@@ -158,7 +174,17 @@ export default function OwnerRooms() {
             <span>{v}</span>
           </div>
         ),
-        responsive: ["md"],
+        responsive: ["lg"],
+      },
+      {
+        title: "Check Times",
+        render: (_, record) => (
+          <div className="flex flex-col text-xs">
+            <span>In: {record.check_in || "—"}</span>
+            <span>Out: {record.check_out || "—"}</span>
+          </div>
+        ),
+        responsive: ["lg"],
       },
       {
         title: "Status",
@@ -169,7 +195,11 @@ export default function OwnerRooms() {
         ],
         onFilter: (val, rec) => rec.is_available === val,
         render: (v) =>
-          v ? <Tag color="green">Available</Tag> : <Tag color="red">Unavailable</Tag>,
+          v ? (
+            <Tag color="green">Available</Tag>
+          ) : (
+            <Tag color="red">Unavailable</Tag>
+          ),
       },
       {
         title: "Actions",

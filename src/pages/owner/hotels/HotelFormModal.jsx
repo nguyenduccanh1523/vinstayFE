@@ -1,10 +1,51 @@
 // src/pages/owner/hotels/HotelFormModal.jsx
 import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Upload, Button, Space, message, Row, Col } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Upload,
+  Button,
+  Space,
+  message,
+  Row,
+  Col,
+  Checkbox,
+} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { hotelApi } from "../../../apis/hotelApi";
 
 const { TextArea } = Input;
+
+// Predefined amenities list
+const AMENITIES_LIST = [
+  "Wifi",
+  "Kitchen",
+  "Jacuzzi",
+  "Balcony",
+  "TV",
+  "AC",
+  "Safe",
+  "Spa",
+  "Pool",
+  "Parking",
+  "Restaurant",
+  "Gym",
+  "Beach",
+  "Bar",
+  "Bida",
+];
+
+// Predefined cities list
+const CITIES_LIST = [
+  "Hà Nội",
+  "TP.HCM",
+  "Đà Nẵng",
+  "Sapa",
+  "Hội An",
+  "Nha Trang",
+];
 
 export default function HotelFormModal({ open, onClose, data, onSuccess }) {
   const [form] = Form.useForm();
@@ -19,12 +60,11 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
         description: data.description,
         address: data.address,
         city: data.city,
-        country: data.country,
+        country: data.country || "VietNam",
         latitude: data.latitude,
         longitude: data.longitude,
-        check_in_time: data.check_in_time,
-        check_out_time: data.check_out_time,
         status: data.status,
+        amenities: data.amenities || [],
       });
       const existing =
         data.images?.map((url, i) => ({
@@ -37,6 +77,8 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
       setFileList(existing);
     } else {
       form.resetFields();
+      // Set default country when creating
+      form.setFieldsValue({ country: "VietNam" });
       setFileList([]);
     }
   }, [open, data]);
@@ -48,10 +90,25 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
     try {
       setSubmitting(true);
       const fd = new FormData();
-      Object.entries(values).forEach(([k, v]) => v != null && fd.append(k, v));
+
+      // Add text fields to FormData
+      fd.append("name", values.name);
+      fd.append("description", values.description);
+      fd.append("address", values.address);
+      fd.append("city", values.city);
+      fd.append("country", values.country);
+      fd.append("latitude", values.latitude);
+      fd.append("longitude", values.longitude);
+      fd.append("status", values.status);
+
+      // Add amenities to FormData
+      if (values.amenities && values.amenities.length > 0) {
+        fd.append("amenities", JSON.stringify(values.amenities));
+      }
 
       fileList.forEach((f, idx) => {
-        if (f.originFileObj) fd.append("images", f.originFileObj, f.name || `image-${idx}.png`);
+        if (f.originFileObj)
+          fd.append("images", f.originFileObj, f.name || `image-${idx}.png`);
         else if (f.url && data) fd.append("existingImages", f.url);
       });
 
@@ -78,12 +135,20 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
       <Form form={form} layout="vertical" onFinish={submit}>
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item name="name" label="Hotel Name" rules={[{ required: true }]}>
+            <Form.Item
+              name="name"
+              label="Hotel Name"
+              rules={[{ required: true }]}
+            >
               <Input placeholder="VinnStay Riverside" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Form.Item
+              name="status"
+              label="Status"
+              rules={[{ required: true }]}
+            >
               <Select
                 options={[
                   { value: "active", label: "Active" },
@@ -94,7 +159,11 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
           </Col>
         </Row>
 
-        <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[{ required: true }]}
+        >
           <TextArea rows={3} />
         </Form.Item>
 
@@ -104,11 +173,14 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
             listType="picture-card"
             fileList={fileList}
             onChange={({ fileList }) => setFileList(fileList)}
-            onRemove={(file) => setFileList((p) => p.filter((i) => i.uid !== file.uid))}
+            onRemove={(file) =>
+              setFileList((p) => p.filter((i) => i.uid !== file.uid))
+            }
             multiple
             accept="image/*"
             beforeUpload={(file) => {
-              const ok = file.type.startsWith("image/") && file.size / 1024 / 1024 < 5;
+              const ok =
+                file.type.startsWith("image/") && file.size / 1024 / 1024 < 5;
               if (!ok) message.error("Only images and <5MB");
               return ok;
             }}
@@ -124,43 +196,64 @@ export default function HotelFormModal({ open, onClose, data, onSuccess }) {
 
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item name="address" label="Address" rules={[{ required: true }]}>
+            <Form.Item
+              name="address"
+              label="Address"
+              rules={[{ required: true }]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col xs={12} md={6}>
             <Form.Item name="city" label="City" rules={[{ required: true }]}>
-              <Input />
+              <Select placeholder="Select a city">
+                {CITIES_LIST.map((city) => (
+                  <Select.Option key={city} value={city}>
+                    {city}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
           <Col xs={12} md={6}>
-            <Form.Item name="country" label="Country" rules={[{ required: true }]}>
-              <Input />
+            <Form.Item
+              name="country"
+              label="Country"
+              rules={[{ required: true }]}
+            >
+              <Input defaultValue="VietNam" readOnly />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col xs={12}>
-            <Form.Item name="check_in_time" label="Check-in Time" rules={[{ required: true }]}>
-              <Input placeholder="14:00" />
-            </Form.Item>
-          </Col>
-          <Col xs={12}>
-            <Form.Item name="check_out_time" label="Check-out Time" rules={[{ required: true }]}>
-              <Input placeholder="12:00" />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item name="amenities" label="Amenities">
+          <Checkbox.Group>
+            <div className="grid grid-cols-3 gap-2">
+              {AMENITIES_LIST.map((amenity) => (
+                <Checkbox key={amenity} value={amenity}>
+                  {amenity}
+                </Checkbox>
+              ))}
+            </div>
+          </Checkbox.Group>
+        </Form.Item>
 
         <Row gutter={16}>
           <Col xs={12}>
-            <Form.Item name="latitude" label="Latitude" rules={[{ required: true }]}>
+            <Form.Item
+              name="latitude"
+              label="Latitude"
+              rules={[{ required: true }]}
+            >
               <Input type="number" step="any" />
             </Form.Item>
           </Col>
           <Col xs={12}>
-            <Form.Item name="longitude" label="Longitude" rules={[{ required: true }]}>
+            <Form.Item
+              name="longitude"
+              label="Longitude"
+              rules={[{ required: true }]}
+            >
               <Input type="number" step="any" />
             </Form.Item>
           </Col>

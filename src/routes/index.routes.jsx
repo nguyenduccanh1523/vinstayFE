@@ -48,6 +48,8 @@ const AppRoutes = () => {
         <Route path="bookings" element={<OwnerBookings />} />
         <Route path="revenue" element={<OwnerRevenue />} />
       </Route>
+
+      
     </Routes>
   );
 };

@@ -5,6 +5,7 @@ import AdminHotel from "../pages/admin/AdminHotel";
 import AdminCustomer from "../pages/admin/AdminCustomer";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminRoom from "../pages/admin/AdminRoom";
+import AdminBooking from "../pages/admin/AdminBooking";
 
 const privateRoutes = [
   {
@@ -44,6 +45,14 @@ const privateRoutes = [
     element: (
       <ProtectedRoute requiredRole="admin">
         <AdminRoom />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/bookings",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminBooking />
       </ProtectedRoute>
     ),
   },

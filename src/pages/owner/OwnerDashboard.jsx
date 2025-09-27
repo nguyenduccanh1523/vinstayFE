@@ -4,12 +4,13 @@ import { Card, Col, Row, Statistic, Skeleton, Empty, Tag } from "antd";
 import { useSelector } from "react-redux";
 import { hotelApi } from "../../apis/hotelApi";
 import { roomApi } from "../../apis/roomApi";
-// import { bookingApi } from "@/apis/bookingApi";
+import { bookingApi } from "../../apis/bookingApi";
 import {
   HomeOutlined,
   AppstoreOutlined,
   BookOutlined,
   DollarOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 export default function OwnerDashboard() {
@@ -17,7 +18,7 @@ export default function OwnerDashboard() {
   const ownerId = user?._id || user?.id;
 
   const [loading, setLoading] = useState(true);
-  const [hotel, setHotel] = useState(null);
+  const [hotels, setHotels] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
 
@@ -27,18 +28,24 @@ export default function OwnerDashboard() {
       setLoading(true);
       try {
         const h = await hotelApi.getHotelByOwner(ownerId);
-        const theHotel = Array.isArray(h) ? h[0] : h;
-        setHotel(theHotel || null);
+        const hotelsList = Array.isArray(h) ? h : [h];
+        setHotels(hotelsList.filter((hotel) => hotel));
 
-        if (theHotel?._id) {
-          const rs = await roomApi.getRoomsByHotel(theHotel._id);
-          setRooms(rs || []);
-          // const bs = await bookingApi.getBookingsByHotelOwner(ownerId);
-          // setBookings(bs || []);
-        } else {
-          setRooms([]);
-          setBookings([]);
+        // Load rooms for all hotels
+        let allRooms = [];
+        if (hotelsList.length > 0) {
+          for (const hotel of hotelsList) {
+            if (hotel?._id) {
+              const rs = await roomApi.getRoomsByHotel(hotel._id);
+              allRooms = [...allRooms, ...(rs || [])];
+            }
+          }
         }
+        setRooms(allRooms);
+
+        // Load owner bookings for revenue calculation
+        const bookingRes = await bookingApi.getOwnerBookings();
+        setBookings(bookingRes.bookings || []);
       } finally {
         setLoading(false);
       }
@@ -49,9 +56,27 @@ export default function OwnerDashboard() {
     const totalRooms = rooms.length;
     const availableRooms = rooms.filter((r) => r.is_available).length;
     const totalBookings = bookings.length;
-    const revenue = bookings.reduce((s, b) => s + (Number(b.total_price) || 0), 0);
-    return { totalRooms, availableRooms, totalBookings, revenue };
-  }, [rooms, bookings]);
+    const confirmedBookings = bookings.filter(
+      (b) => b.status === "confirmed"
+    ).length;
+
+    // Calculate revenue from confirmed bookings only
+    const totalRevenue = bookings
+      .filter((b) => b.status === "confirmed")
+      .reduce((s, b) => s + (Number(b.total_price) || 0), 0);
+
+    // Convert VND to USD for display
+    const revenueUSD = totalRevenue;
+
+    return {
+      totalHotels: hotels.length,
+      totalRooms,
+      availableRooms,
+      totalBookings,
+      confirmedBookings,
+      revenue: revenueUSD,
+    };
+  }, [hotels, rooms, bookings]);
 
   return (
     <div>
@@ -60,40 +85,101 @@ export default function OwnerDashboard() {
           <Card>
             {loading ? (
               <Skeleton active />
-            ) : hotel ? (
+            ) : hotels.length > 0 ? (
               <div>
                 <div className="text-lg font-semibold flex items-center gap-2">
-                  <HomeOutlined /> {hotel.name}
-                  <Tag color={hotel.status === "active" ? "green" : "red"}>
-                    {hotel.status?.toUpperCase()}
-                  </Tag>
+                  <HomeOutlined /> Your Hotels ({hotels.length})
                 </div>
-                <div className="text-gray-500">{hotel.address}, {hotel.city}, {hotel.country}</div>
+                <div className="space-y-2 mt-2">
+                  {hotels.map((hotel, index) => (
+                    <div
+                      key={hotel._id || index}
+                      className="border-l-4 border-blue-500 pl-3"
+                    >
+                      <div className="font-medium flex items-center gap-2">
+                        {hotel.name}
+                        <Tag
+                          color={hotel.status === "active" ? "green" : "red"}
+                        >
+                          {hotel.status?.toUpperCase()}
+                        </Tag>
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        {hotel.address}, {hotel.city}, {hotel.country}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
-              <Empty description="No hotel yet" />
+              <Empty description="No hotels yet" />
             )}
           </Card>
         </Col>
 
         <Col xs={12} md={6} lg={4}>
           <Card>
-            <Statistic title="Rooms" prefix={<AppstoreOutlined />} value={stats.totalRooms} />
+            <Statistic
+              title="Total Hotels"
+              prefix={<HomeOutlined />}
+              value={stats.totalHotels}
+              valueStyle={{ color: "#1890ff" }}
+            />
+          </Card>
+        </Col>
+
+        <Col xs={12} md={6} lg={4}>
+          <Card>
+            <Statistic
+              title="Total Rooms"
+              prefix={<AppstoreOutlined />}
+              value={stats.totalRooms}
+              valueStyle={{ color: "#1890ff" }}
+            />
           </Card>
         </Col>
         <Col xs={12} md={6} lg={4}>
           <Card>
-            <Statistic title="Available" value={stats.availableRooms} />
+            <Statistic
+              title="Available"
+              value={stats.availableRooms}
+              valueStyle={{ color: "#52c41a" }}
+            />
           </Card>
         </Col>
         <Col xs={12} md={6} lg={4}>
           <Card>
-            <Statistic title="Bookings" prefix={<BookOutlined />} value={stats.totalBookings} />
+            <Statistic
+              title="Total Bookings"
+              prefix={<BookOutlined />}
+              value={stats.totalBookings}
+              valueStyle={{ color: "#722ed1" }}
+            />
           </Card>
         </Col>
         <Col xs={12} md={6} lg={4}>
           <Card>
-            <Statistic title="Revenue" prefix={<DollarOutlined />} value={stats.revenue} precision={2} />
+            <Statistic
+              title="Confirmed"
+              prefix={<CheckCircleOutlined />}
+              value={stats.confirmedBookings}
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={12} lg={8}>
+          <Card>
+            <Statistic
+              title="Total Revenue"
+              prefix={<DollarOutlined />}
+              value={stats.revenue}
+              precision={0}
+              valueStyle={{ color: "#f5222d", fontSize: "24px" }}
+              suffix="USD"
+            />
+            <div className="text-gray-500 text-sm mt-2">
+              From confirmed bookings only
+            </div>
           </Card>
         </Col>
       </Row>

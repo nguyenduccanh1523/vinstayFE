@@ -22,18 +22,20 @@ export default function OwnerHotels() {
   const { user } = useSelector((state) => state.auth);
   const ownerId = user?._id || user?.id;
 
-  const [hotel, setHotel] = useState(null);
+  const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false); // modal open
+  const [open, setOpen] = useState(false);
+  const [selectedHotel, setSelectedHotel] = useState(null);
 
   const load = async () => {
     setLoading(true);
     try {
       const res = await hotelApi.getHotelByOwner(ownerId);
-      const h = Array.isArray(res) ? res[0] : res;
-      setHotel(h || null);
+      const hotelsList = Array.isArray(res) ? res : [res];
+      console.log("Loaded owner hotels:", hotelsList);
+      setHotels(hotelsList.filter((h) => h)); // Filter out null/undefined
     } catch {
-      message.error("Failed to load your hotel");
+      message.error("Failed to load your hotels");
     } finally {
       setLoading(false);
     }
@@ -68,37 +70,63 @@ export default function OwnerHotels() {
       { title: "City", dataIndex: "city" },
       { title: "Country", dataIndex: "country" },
       {
+        title: "Amenities",
+        dataIndex: "amenities",
+        width: 200,
+        render: (amenities) => (
+          <div className="flex flex-wrap gap-1">
+            {amenities && amenities.length > 0 ? (
+              amenities.slice(0, 3).map((amenity, index) => (
+                <Tag key={index} size="small" color="blue">
+                  {amenity}
+                </Tag>
+              ))
+            ) : (
+              <span className="text-gray-400">No amenities</span>
+            )}
+            {amenities && amenities.length > 3 && (
+              <Tag size="small" color="default">
+                +{amenities.length - 3}
+              </Tag>
+            )}
+          </div>
+        ),
+      },
+      {
         title: "Status",
         dataIndex: "status",
         render: (s) => (
-          <Tag color={s === "active" ? "green" : "red"}>
-            {s?.toUpperCase()}
-          </Tag>
+          <Tag color={s === "active" ? "green" : "red"}>{s?.toUpperCase()}</Tag>
         ),
       },
       {
         title: "Action",
         width: 120,
-        render: () =>
-          hotel ? (
-            <Space>
-              <Button icon={<EditOutlined />} onClick={() => setOpen(true)}>
-                Edit
-              </Button>
-            </Space>
-          ) : null,
+        render: (_, record) => (
+          <Space>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => {
+                setSelectedHotel(record);
+                setOpen(true);
+              }}
+            >
+              Edit
+            </Button>
+          </Space>
+        ),
       },
     ],
-    [hotel]
+    []
   );
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-xl font-semibold">Your Hotel</div>
+          <div className="text-xl font-semibold">Your Hotels</div>
           <div className="text-gray-500 text-sm">
-            Tạo / chỉnh sửa thông tin khách sạn của bạn
+            Create/edit your hotel information
           </div>
         </div>
         <Search
@@ -114,24 +142,27 @@ export default function OwnerHotels() {
         ) : (
           <Table
             rowKey="_id"
-            dataSource={hotel ? [hotel] : []}
+            dataSource={hotels}
             columns={columns}
             pagination={false}
             locale={{
               emptyText: (
-                <Empty description="You don't have a hotel, create one." />
+                <Empty description="You don't have any hotels, create one." />
               ),
             }}
           />
         )}
       </Card>
 
-      {!hotel && !loading && (
+      {hotels.length === 0 && !loading && (
         <div className="mt-3">
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setSelectedHotel(null);
+              setOpen(true);
+            }}
           >
             Create My Hotel
           </Button>
@@ -140,10 +171,14 @@ export default function OwnerHotels() {
 
       <HotelFormModal
         open={open}
-        onClose={() => setOpen(false)}
-        data={hotel}
+        onClose={() => {
+          setOpen(false);
+          setSelectedHotel(null);
+        }}
+        data={selectedHotel}
         onSuccess={() => {
           setOpen(false);
+          setSelectedHotel(null);
           load();
         }}
       />

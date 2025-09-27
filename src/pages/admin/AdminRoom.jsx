@@ -28,6 +28,25 @@ import { hotelApi } from "../../apis/hotelApi";
 const { TextArea } = Input;
 const { Search } = Input;
 
+// Predefined view options
+const VIEW_OPTIONS = [
+  "City View",
+  "Ocean View",
+  "Garden View",
+  "Mountain View",
+  "Courtyard View",
+];
+
+// Predefined room types
+const ROOM_TYPES = [
+  "Standard",
+  "Deluxe",
+  "Suite",
+  "Executive",
+  "Presidential",
+  "Family",
+];
+
 const AdminRoom = () => {
   const [rooms, setRooms] = useState([]);
   const [filteredRooms, setFilteredRooms] = useState([]);
@@ -50,6 +69,8 @@ const AdminRoom = () => {
   const [searchText, setSearchText] = useState("");
 
   const [form] = Form.useForm();
+  const [selectedHotelId, setSelectedHotelId] = useState(null);
+  const [selectedHotelAmenities, setSelectedHotelAmenities] = useState([]);
 
   useEffect(() => {
     fetchHotels();
@@ -105,6 +126,17 @@ const AdminRoom = () => {
   const handleEdit = (record) => {
     setEditingRoom(record);
 
+    // Set selected hotel for amenities
+    const hotelId =
+      typeof record.hotel_id === "object"
+        ? record.hotel_id?._id
+        : record.hotel_id;
+    setSelectedHotelId(hotelId);
+
+    // Find hotel amenities
+    const hotel = hotels.find((h) => h._id === hotelId);
+    setSelectedHotelAmenities(hotel?.amenities || []);
+
     const existingFiles =
       record.images?.map((url, idx) => ({
         uid: `-${idx}`,
@@ -116,14 +148,15 @@ const AdminRoom = () => {
     setFileList(existingFiles);
 
     form.setFieldsValue({
-      hotel_id:
-        typeof record.hotel_id === "object"
-          ? record.hotel_id?._id
-          : record.hotel_id,
+      hotel_id: hotelId,
       room_number: record.room_number,
       room_type: record.room_type,
       price: record.price,
       capacity: record.capacity,
+      room_area: record.room_area,
+      view: record.view,
+      check_in_time: record.check_in_time,
+      check_out_time: record.check_out_time,
       is_available: record.is_available,
       amenities: record.amenities || [],
       description: record.description || "",
@@ -162,12 +195,18 @@ const AdminRoom = () => {
       formData.append("room_type", values.room_type);
       formData.append("price", values.price);
       formData.append("capacity", values.capacity);
+      formData.append("room_area", values.room_area);
+      formData.append("view", values.view);
+      formData.append("check_in", values.check_in);
+      formData.append("check_out", values.check_out);
       formData.append("is_available", values.is_available);
 
       if (values.description)
         formData.append("description", values.description);
 
-      (values.amenities || []).forEach((a) => formData.append("amenities", a));
+      if (values.amenities && values.amenities.length > 0) {
+        formData.append("amenities", JSON.stringify(values.amenities));
+      }
 
       fileList.forEach((file, index) => {
         if (file.originFileObj) {
@@ -192,6 +231,8 @@ const AdminRoom = () => {
       setModalVisible(false);
       form.resetFields();
       setFileList([]);
+      setSelectedHotelId(null);
+      setSelectedHotelAmenities([]);
       fetchRooms();
     } catch {
       message.error(`Failed to ${editingRoom ? "update" : "create"} room`);
@@ -205,9 +246,10 @@ const AdminRoom = () => {
     if (submitting || closingEdit) return;
     setClosingEdit(true);
     setModalVisible(false);
-    // small delay để tránh click liên tiếp
     setTimeout(() => {
       setFileList([]);
+      setSelectedHotelId(null);
+      setSelectedHotelAmenities([]);
       setClosingEdit(false);
     }, 200);
   };
@@ -238,6 +280,14 @@ const AdminRoom = () => {
   const handleRemoveFile = (file) => {
     const newList = fileList.filter((i) => i.uid !== file.uid);
     setFileList(newList);
+  };
+
+  const handleHotelChange = (hotelId) => {
+    setSelectedHotelId(hotelId);
+    const hotel = hotels.find((h) => h._id === hotelId);
+    setSelectedHotelAmenities(hotel?.amenities || []);
+    // Clear amenities when hotel changes
+    form.setFieldValue("amenities", []);
   };
 
   const columns = [
@@ -279,6 +329,19 @@ const AdminRoom = () => {
       key: "price",
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (v) => (v != null ? `$${v}` : "—"),
+    },
+    {
+      title: "Area",
+      dataIndex: "room_area",
+      key: "room_area",
+      sorter: (a, b) => (a.room_area || 0) - (b.room_area || 0),
+      render: (v) => (v != null ? `${v}m²` : "—"),
+    },
+    {
+      title: "View",
+      dataIndex: "view",
+      key: "view",
+      render: (view) => (view ? <Tag color="blue">{view}</Tag> : "—"),
     },
     {
       title: "Capacity",
@@ -403,6 +466,7 @@ const AdminRoom = () => {
               placeholder="Select a hotel"
               showSearch
               optionFilterProp="label"
+              onChange={handleHotelChange}
               filterOption={(input, option) =>
                 (option?.label ?? "")
                   .toLowerCase()
@@ -428,13 +492,19 @@ const AdminRoom = () => {
             <Form.Item
               name="room_type"
               label="Room Type"
-              rules={[{ required: true, message: "Please input room type!" }]}
+              rules={[{ required: true, message: "Please select room type!" }]}
             >
-              <Input placeholder="Deluxe / Suite / ..." disabled={submitting} />
+              <Select placeholder="Select room type" disabled={submitting}>
+                {ROOM_TYPES.map((type) => (
+                  <Select.Option key={type} value={type}>
+                    {type}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <Form.Item
               name="price"
               label="Price (USD)"
@@ -449,6 +519,50 @@ const AdminRoom = () => {
               rules={[{ required: true, message: "Please input capacity!" }]}
             >
               <Input type="number" min={1} disabled={submitting} />
+            </Form.Item>
+
+            <Form.Item
+              name="room_area"
+              label="Room Area (m²)"
+              rules={[{ required: true, message: "Please input room area!" }]}
+            >
+              <Input type="number" min={1} disabled={submitting} />
+            </Form.Item>
+          </div>
+
+          <Form.Item
+            name="view"
+            label="View"
+            rules={[{ required: true, message: "Please select view!" }]}
+          >
+            <Select placeholder="Select room view" disabled={submitting}>
+              {VIEW_OPTIONS.map((view) => (
+                <Select.Option key={view} value={view}>
+                  {view}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              name="check_in"
+              label="Check-in Time"
+              rules={[
+                { required: true, message: "Please input check-in time!" },
+              ]}
+            >
+              <Input placeholder="14:00" disabled={submitting} />
+            </Form.Item>
+
+            <Form.Item
+              name="check_out"
+              label="Check-out Time"
+              rules={[
+                { required: true, message: "Please input check-out time!" },
+              ]}
+            >
+              <Input placeholder="12:00" disabled={submitting} />
             </Form.Item>
           </div>
 
@@ -466,7 +580,30 @@ const AdminRoom = () => {
           </Form.Item>
 
           <Form.Item name="amenities" label="Amenities">
-            <Select mode="tags" placeholder="WiFi, TV, Mini-bar..." disabled={submitting} />
+            <Select
+              mode="multiple"
+              placeholder={
+                selectedHotelId
+                  ? "Select amenities from hotel"
+                  : "Please select a hotel first"
+              }
+              disabled={
+                submitting ||
+                !selectedHotelId ||
+                selectedHotelAmenities.length === 0
+              }
+            >
+              {selectedHotelAmenities.map((amenity) => (
+                <Select.Option key={amenity} value={amenity}>
+                  {amenity}
+                </Select.Option>
+              ))}
+            </Select>
+            {!selectedHotelId && (
+              <div className="text-gray-500 text-sm mt-1">
+                Select a hotel first to see available amenities
+              </div>
+            )}
           </Form.Item>
 
           <Form.Item name="description" label="Description">
@@ -509,7 +646,10 @@ const AdminRoom = () => {
               <Button type="primary" htmlType="submit" loading={submitting}>
                 {editingRoom ? "Update" : "Create"}
               </Button>
-              <Button onClick={handleCloseEditModal} disabled={submitting || closingEdit}>
+              <Button
+                onClick={handleCloseEditModal}
+                disabled={submitting || closingEdit}
+              >
                 Cancel
               </Button>
             </Space>
@@ -523,7 +663,11 @@ const AdminRoom = () => {
         open={viewModalVisible}
         onCancel={handleCloseViewModal}
         footer={[
-          <Button key="close" onClick={handleCloseViewModal} disabled={closingView}>
+          <Button
+            key="close"
+            onClick={handleCloseViewModal}
+            disabled={closingView}
+          >
             Close
           </Button>,
         ]}
@@ -570,13 +714,33 @@ const AdminRoom = () => {
                 <strong>Capacity:</strong> {viewingRoom.capacity}
               </div>
               <div>
-                <strong>Available:</strong> {viewingRoom.is_available ? "Yes" : "No"}
+                <strong>Area:</strong> {viewingRoom.room_area}m²
+              </div>
+              <div>
+                <strong>View:</strong> {viewingRoom.view || "—"}
+              </div>
+              <div>
+                <strong>Available:</strong>{" "}
+                {viewingRoom.is_available ? "Yes" : "No"}
+              </div>
+              <div>
+                <strong>Check-in:</strong> {viewingRoom.check_in || "—"}
+              </div>
+              <div>
+                <strong>Check-out:</strong> {viewingRoom.check_out || "—"}
               </div>
             </div>
 
             {viewingRoom.amenities?.length ? (
               <div>
-                <strong>Amenities:</strong> {viewingRoom.amenities.join(", ")}
+                <strong>Amenities:</strong>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {viewingRoom.amenities.map((amenity, index) => (
+                    <Tag key={index} color="blue">
+                      {amenity}
+                    </Tag>
+                  ))}
+                </div>
               </div>
             ) : null}
 
