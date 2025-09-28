@@ -31,6 +31,7 @@ const mapApiRoomToCard = (r) => {
     check_out: r.check_out || "12:00 PM",
     hotel_name: r.hotel_id?.name || "",
     hotel_city: r.hotel_id?.city || "",
+    hotel_id: typeof r.hotel_id === "object" ? r.hotel_id?._id : r.hotel_id,
   };
 };
 

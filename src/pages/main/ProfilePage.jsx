@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+export { default } from './ProfileFuture/ProfilePage';
 import { useSelector } from "react-redux";
 import {
   Card,

@@ -6,7 +6,8 @@ import RoomDetail from "../features/RoomFeature/RoomDetail";
 import Unauthorized from "../pages/Unauthorized";
 import ProtectedRoute from "../components/ProtectedRoute";
 import BookingPage from "../pages/main/BookingPage";
-import ProfilePage from "../pages/main/ProfilePage";
+import ProfilePage from "../pages/main/ProfileFuture/ProfilePage";
+import CheckoutPage from "../pages/main/CheckoutPage";
 
 const publicRoutes = [
   {
@@ -36,6 +37,10 @@ const publicRoutes = [
   {
     path: "/profile",
     element: <ProfilePage />,
+  },
+  {
+    path: "/checkout",
+    element: <CheckoutPage />,
   },
   {
     path: "/unauthorized",

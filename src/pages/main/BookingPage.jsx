@@ -4,7 +4,6 @@ import {
   Button,
   Tag,
   Modal,
-  message,
   Spin,
   Empty,
   Row,
@@ -21,8 +20,8 @@ import {
   EnvironmentOutlined,
   ExclamationCircleOutlined,
   WifiOutlined,
-  StarOutlined,
 } from "@ant-design/icons";
+import { toast } from "react-toastify";
 import { bookingApi } from "../../apis/bookingApi";
 
 const { Title, Text, Paragraph } = Typography;
@@ -43,18 +42,47 @@ const BookingPage = () => {
       const response = await bookingApi.getUserBookings();
       setBookings(response.bookings || []);
     } catch (error) {
-      message.error("Failed to fetch bookings");
+      toast.error("Failed to fetch your bookings", {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       console.error("Error fetching bookings:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelBooking = (bookingId, hotelName) => {
+  const isCheckInDatePassed = (checkInDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkIn = new Date(checkInDate);
+    checkIn.setHours(0, 0, 0, 0);
+    return checkIn <= today;
+  };
+
+  const handleCancelBooking = (booking) => {
+    const { _id: bookingId, hotel_id: hotel, check_in_date } = booking;
+
+    if (isCheckInDatePassed(check_in_date)) {
+      toast.warning("Cannot cancel booking - check-in date has passed", {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
     confirm({
       title: "Cancel Booking",
       icon: <ExclamationCircleOutlined />,
-      content: `Are you sure you want to cancel your booking at ${hotelName}?`,
+      content: `Are you sure you want to cancel your booking at ${hotel.name}?`,
       okText: "Yes, Cancel",
       okType: "danger",
       cancelText: "No",
@@ -66,10 +94,31 @@ const BookingPage = () => {
     try {
       setCanceling(bookingId);
       await bookingApi.cancelBooking(bookingId);
-      message.success("Booking cancelled successfully");
+
+      toast.success("🎉 Booking cancelled successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
       fetchUserBookings();
     } catch (error) {
-      message.error("Failed to cancel booking");
+      toast.error(
+        `❌ Failed to cancel booking: ${
+          error.response?.data?.message || "Please try again"
+        }`,
+        {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
       console.error("Error cancelling booking:", error);
     } finally {
       setCanceling(null);
@@ -97,7 +146,9 @@ const BookingPage = () => {
   const BookingCard = ({ booking }) => {
     const { hotel_id: hotel, room_id: room } = booking;
     const canCancel =
-      booking.status === "confirmed" || booking.status === "pending";
+      (booking.status === "confirmed" || booking.status === "pending") &&
+      !isCheckInDatePassed(booking.check_in_date);
+    const checkInPassed = isCheckInDatePassed(booking.check_in_date);
 
     return (
       <Card
@@ -140,6 +191,11 @@ const BookingPage = () => {
                 >
                   {booking.status.toUpperCase()}
                 </Tag>
+                {checkInPassed && (
+                  <Tag color="orange" className="text-sm px-2 py-1 mt-2">
+                    CHECK-IN PASSED
+                  </Tag>
+                )}
               </div>
             </div>
 
@@ -214,17 +270,25 @@ const BookingPage = () => {
                 Booked on {formatDate(booking.created_at)}
               </div>
 
-              {canCancel && (
+              {canCancel ? (
                 <Button
                   type="primary"
                   danger
                   loading={canceling === booking._id}
-                  onClick={() => handleCancelBooking(booking._id, hotel.name)}
+                  onClick={() => handleCancelBooking(booking)}
                   className="w-full sm:w-auto"
                 >
                   Cancel Booking
                 </Button>
-              )}
+              ) : checkInPassed ? (
+                <Button
+                  disabled
+                  className="w-full sm:w-auto"
+                  title="Cannot cancel - check-in date has passed"
+                >
+                  Cannot Cancel
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
