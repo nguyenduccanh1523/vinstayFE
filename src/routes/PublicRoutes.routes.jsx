@@ -8,6 +8,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import BookingPage from "../pages/main/BookingPage";
 import ProfilePage from "../pages/main/ProfileFuture/ProfilePage";
 import CheckoutPage from "../pages/main/CheckoutPage";
+import Notification from "../components/Sidebar/Notification";
 
 const publicRoutes = [
   {
@@ -41,6 +42,10 @@ const publicRoutes = [
   {
     path: "/checkout",
     element: <CheckoutPage />,
+  },
+  {
+    path: "/notifications",
+    element: <Notification />,
   },
   {
     path: "/unauthorized",

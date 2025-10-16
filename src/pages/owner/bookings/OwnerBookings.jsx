@@ -30,7 +30,18 @@ export default function OwnerBookings() {
     setLoading(true);
     try {
       const res = await bookingApi.getOwnerBookings();
-      setData(res.bookings || []);
+      const bookings = Array.isArray(res.bookings) ? res.bookings : [];
+      const pickDate = (it) =>
+        it?.createdAt ||
+        it?.created_at ||
+        it?.check_in_date ||
+        it?.updatedAt ||
+        it?.updated_at;
+      const toMs = (v) => (v ? new Date(v).getTime() : 0);
+      const sorted = [...bookings].sort(
+        (a, b) => toMs(pickDate(b)) - toMs(pickDate(a))
+      );
+      setData(sorted);
     } catch (error) {
       message.error("Failed to load bookings");
     } finally {

@@ -138,9 +138,7 @@ export default function HotelDetail() {
             {activeTab === "rooms" && (
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold">Available Rooms</h3>
-                <RoomsList
-                  rooms={rooms}
-                />
+                <RoomsList rooms={rooms} />
               </div>
             )}
 
@@ -153,6 +151,7 @@ export default function HotelDetail() {
 
             {activeTab === "reviews" && (
               <ReviewsBlock
+                hotelId={hotel._id}
                 rating={header.rating}
                 reviewCount={header.reviewCount}
               />

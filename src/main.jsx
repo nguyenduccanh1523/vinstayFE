@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import store from "./stores/reducers/store.js";
 import { ToastContainer } from "react-toastify";
+import SocketProvider from "./config/SocketProvider";
 
 const queryClient = new QueryClient();
 
@@ -17,10 +18,13 @@ createRoot(document.getElementById("root")).render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
-          <ToastContainer position="top-right" autoClose={2500} />
+          <SocketProvider>
+            <App />
+            <ToastContainer position="top-right" autoClose={2500} />
+          </SocketProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </Provider>
   </StrictMode>
 );
+

@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../stores/actions/authSlice";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useSocket } from "../../config/SocketProvider";
 
 const Header = () => {
+  const { notifications, unreadCount, markNotiRead } = useSocket(); // 👈 lấy từ Provider
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { isAuthenticated, user, token } = useSelector((state) => state.auth);
+  const [notiOpen, setNotiOpen] = useState(false);
+
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -21,11 +25,23 @@ const Header = () => {
     setUserMenuOpen(false);
   };
 
+  const formatTime = (iso) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
+
+  const previewCount = 3;
+
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a
-          href="/"
+        <Link
+          to="/"
           className="flex items-center gap-2"
           aria-label="Go to homepage"
         >
@@ -33,132 +49,217 @@ const Header = () => {
             VS
           </span>
           <span className="text-xl font-semibold tracking-tight">VinnStay</span>
-        </a>
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          <a className="hover:text-slate-900 text-slate-600" href="/hotels">
-            Hotels
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="/rooms">
-            Rooms
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="#offers">
-            Offers
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="#dining">
-            Dining
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="#spa">
-            Spa
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="#events">
-            Events
-          </a>
-          <a className="hover:text-slate-900 text-slate-600" href="#contact">
-            Contact
-          </a>
-          {isAdmin && (
-            <a
-              className="hover:text-slate-900 text-slate-600"
-              href="/admin"
-            >
-              Management
-            </a>
-          )}
+        </Link>
 
+        <nav className="hidden md:flex items-center gap-6 text-sm">
+          <Link className="hover:text-slate-900 text-slate-600" to="/hotels">
+            Hotels
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="/rooms">
+            Rooms
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="#offers">
+            Offers
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="#dining">
+            Dining
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="#spa">
+            Spa
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="#events">
+            Events
+          </Link>
+          <Link className="hover:text-slate-900 text-slate-600" to="#contact">
+            Contact
+          </Link>
+          {isAdmin && (
+            <Link className="hover:text-slate-900 text-slate-600" to="/admin">
+              Management
+            </Link>
+          )}
           {isHotelOwner && (
-            <a
+            <Link
               className="hover:text-slate-900 text-slate-600"
-              href="/manage-hotel"
+              to="/manage-hotel"
             >
               Manage Hotel
-            </a>
+            </Link>
           )}
         </nav>
+
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated && user ? (
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"
-              >
-                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {user.username?.charAt(0).toUpperCase() || "U"}
-                </div>
-                <span className="text-sm font-medium">{user.username}</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+            <>
+              {/* Notification bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotiOpen((s) => !s)}
+                  className="relative p-2 rounded-lg hover:bg-slate-100"
+                  aria-label="Notifications"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
-                  <div className="px-4 py-2 border-b border-slate-200">
-                    <p className="text-sm text-slate-500">{user.email}</p>
-                    <p className="text-xs text-slate-400 capitalize">
-                      {user.role_id?.name}
-                    </p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-slate-700"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 10-12 0v.75a8.967 8.967 0 01-2.311 6.022c1.766.68 3.6 1.064 5.455 1.31m5.713 0a24.255 24.255 0 01-5.713 0m5.713 0a3 3 0 11-5.713 0" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {notiOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 z-50">
+                    <div className="px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                      <span className="text-sm font-medium">Notifications</span>
+                      <Link
+                        to="/notifications"
+                        className="text-xs text-slate-600 hover:underline"
+                      >
+                        View all
+                      </Link>
+                    </div>
+                    <div className="max-h-80 overflow-auto">
+                      {notifications.slice(0, previewCount).map((n) => {
+                        const title = n.title || "Notification";
+                        const message = n.message || n.content || "";
+                        const time = formatTime(n.created_at || n.createdAt);
+                        const unread = !(n.is_read || n.read);
+                        return (
+                          <button
+                            key={
+                              n._id ||
+                              `${n.title}-${n.created_at || n.createdAt}`
+                            }
+                            onClick={() => n._id && markNotiRead(n._id)}
+                            className={`w-full text-left px-3 py-2 flex gap-2 hover:bg-slate-50 ${
+                              unread ? "bg-slate-50" : "bg-white"
+                            }`}
+                          >
+                            <span
+                              className={`mt-1 h-2 w-2 rounded-full ${
+                                unread ? "bg-blue-600" : "bg-slate-300"
+                              }`}
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm line-clamp-2">
+                                {title}
+                              </div>
+                              {message && (
+                                <div className="text-xs text-slate-600 line-clamp-2 mt-0.5">
+                                  {message}
+                                </div>
+                              )}
+                              {time && (
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  {time}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {notifications.length === 0 && (
+                        <div className="px-3 py-4 text-sm text-slate-600">
+                          No notifications
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <a
-                    href="/profile"
-                    className="block px-4 py-2 text-sm hover:bg-slate-50"
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"
+                >
+                  <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {user.username?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                  <span className="text-sm font-medium">{user.username}</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    Profile
-                  </a>
-                  <a
-                    href="/bookings"
-                    className="block px-4 py-2 text-sm hover:bg-slate-50"
-                  >
-                    My Bookings
-                  </a>
-                  {isAdmin && (
-                    <a
-                      href="/admin"
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                    <div className="px-4 py-2 border-b border-slate-200">
+                      <p className="text-sm text-slate-500">{user.email}</p>
+                      <p className="text-xs text-slate-400 capitalize">
+                        {user.role_id?.name}
+                      </p>
+                    </div>
+                    <Link
+                      to="/profile"
                       className="block px-4 py-2 text-sm hover:bg-slate-50"
                     >
-                      Management
-                    </a>
-                  )}
-                  {isHotelOwner && (
-                    <a
+                      Profile
+                    </Link>
+                    <Link
+                      to="/bookings"
                       className="block px-4 py-2 text-sm hover:bg-slate-50"
-                      href="/manage-hotel"
                     >
-                      Manage Hotel
-                    </a>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 text-red-600"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
+                      My Bookings
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="block px-4 py-2 text-sm hover:bg-slate-50"
+                      >
+                        Management
+                      </Link>
+                    )}
+                    {isHotelOwner && (
+                      <Link
+                        to="/manage-hotel"
+                        className="block px-4 py-2 text-sm hover:bg-slate-50"
+                      >
+                        Manage Hotel
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 text-red-600"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <>
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="text-sm text-slate-700 hover:underline"
               >
                 Sign in
-              </a>
-              <a
-                href="/register"
+              </Link>
+              <Link
+                to="/register"
                 className="inline-flex h-9 items-center rounded-xl bg-slate-900 px-4 text-white text-sm font-medium hover:bg-slate-800"
               >
                 Book Now
-              </a>
+              </Link>
             </>
           )}
         </div>
+
         <button
           onClick={() => setOpen((s) => !s)}
           className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg border border-slate-300"
@@ -176,43 +277,45 @@ const Header = () => {
           </svg>
         </button>
       </div>
+
       {open && (
         <div className="md:hidden border-t border-slate-200 bg-white">
           <nav className="mx-auto max-w-7xl px-4 py-3 grid gap-3 text-sm">
-            <a className="py-2" href="/hotels">
+            <Link className="py-2" to="/hotels">
               Hotels
-            </a>
-            <a className="py-2" href="/rooms">
+            </Link>
+            <Link className="py-2" to="/rooms">
               Rooms
-            </a>
-            <a className="py-2" href="#offers">
+            </Link>
+            <Link className="py-2" to="#offers">
               Offers
-            </a>
-            <a className="py-2" href="#dining">
+            </Link>
+            <Link className="py-2" to="#dining">
               Dining
-            </a>
-            <a className="py-2" href="#spa">
+            </Link>
+            <Link className="py-2" to="#spa">
               Spa
-            </a>
-            <a className="py-2" href="#events">
+            </Link>
+            <Link className="py-2" to="#events">
               Events
-            </a>
-            <a className="py-2" href="#contact">
+            </Link>
+            <Link className="py-2" to="#contact">
               Contact
-            </a>
+            </Link>
             {isAdmin && (
-              <a className="py-2" href="/admin">
+              <Link className="py-2" to="/admin">
                 Management
-              </a>
+              </Link>
             )}
             {isHotelOwner && (
-              <a
+              <Link
                 className="hover:text-slate-900 text-slate-600"
-                href="/manage-hotel"
+                to="/manage-hotel"
               >
                 Manage Hotel
-              </a>
+              </Link>
             )}
+
             <div className="pt-2 grid grid-cols-2 gap-3">
               {isAuthenticated && user ? (
                 <>
@@ -220,12 +323,12 @@ const Header = () => {
                     <p className="font-medium">{user.username}</p>
                     <p className="text-xs text-slate-500">{user.email}</p>
                   </div>
-                  <a
-                    href="/profile"
+                  <Link
+                    to="/profile"
                     className="h-10 rounded-xl border border-slate-300 grid place-items-center"
                   >
                     Profile
-                  </a>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="h-10 rounded-xl bg-red-600 text-white grid place-items-center"
@@ -235,18 +338,18 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     className="h-10 rounded-xl border border-slate-300 grid place-items-center"
                   >
                     Sign in
-                  </a>
-                  <a
-                    href="/book"
+                  </Link>
+                  <Link
+                    to="/book"
                     className="h-10 rounded-xl bg-slate-900 text-white grid place-items-center"
                   >
                     Book Now
-                  </a>
+                  </Link>
                 </>
               )}
             </div>
