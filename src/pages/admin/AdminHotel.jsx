@@ -23,6 +23,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import { hotelApi } from "../../apis/hotelApi";
+import { customerApi } from "../../apis/customerApi"; // <-- added import for owners
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -67,10 +68,12 @@ const AdminHotel = () => {
   const [viewingHotel, setViewingHotel] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [owners, setOwners] = useState([]); // <-- new: owners list
   const [form] = Form.useForm();
 
   useEffect(() => {
     fetchHotels();
+    fetchOwners(); // <-- fetch owners on mount
   }, []);
 
   useEffect(() => {
@@ -85,12 +88,48 @@ const AdminHotel = () => {
     }
   }, [searchText, hotels]);
 
+  // helper: safely parse a field that may be array or JSON-string
+  const ensureArray = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+      } catch (e) {
+        // fallback: split by comma (if stored as csv)
+        return value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+    return [];
+  };
+
+  const fetchOwners = async () => {
+    try {
+      const data = await customerApi.getAllCustomers();
+      // Optionally filter owners by role if you have role info, otherwise keep all users
+      setOwners(data || []);
+    } catch (error) {
+      // silent or show message
+      console.error("Failed to fetch owners", error);
+    }
+  };
+
   const fetchHotels = async () => {
     setLoading(true);
     try {
       const data = await hotelApi.getAllHotels();
-      setHotels(data);
-      setFilteredHotels(data);
+      // normalize amenities and images to arrays for consistent usage in UI
+      const normalized = (data || []).map((h) => ({
+        ...h,
+        amenities: ensureArray(h.amenities),
+        images: ensureArray(h.images),
+      }));
+      setHotels(normalized);
+      setFilteredHotels(normalized);
     } catch (error) {
       message.error("Failed to fetch hotels");
     } finally {
@@ -105,8 +144,7 @@ const AdminHotel = () => {
   const handleCreate = () => {
     setEditingHotel(null);
     form.resetFields();
-    // Set default country when creating
-    form.setFieldsValue({ country: "VietNam" });
+    form.setFieldsValue({ country: "VietNam", owner_id: undefined }); // include owner default
     setFileList([]);
     setModalVisible(true);
   };
@@ -114,9 +152,10 @@ const AdminHotel = () => {
   const handleEdit = (record) => {
     setEditingHotel(record);
 
-    // Set existing images to fileList
+    // Prepare existing files (images) safely
+    const imagesArr = ensureArray(record.images);
     const existingFiles =
-      record.images?.map((url, index) => ({
+      imagesArr.map((url, index) => ({
         uid: `-${index}`,
         name: `image-${index}`,
         status: "done",
@@ -134,8 +173,9 @@ const AdminHotel = () => {
       latitude: record.latitude,
       longitude: record.longitude,
       status: record.status,
-      amenities: record.amenities || [],
-      images: record.images || [],
+      amenities: ensureArray(record.amenities), // <-- ensure amenities is array
+      images: imagesArr,
+      owner_id: record.owner_id?._id || record.owner_id || undefined, // ensure owner id for select
     });
 
     setModalVisible(true);
@@ -170,9 +210,14 @@ const AdminHotel = () => {
       formData.append("longitude", values.longitude);
       formData.append("status", values.status);
 
-      // Add amenities to FormData
+      // Add owner if provided
+      if (values.owner_id) {
+        formData.append("owner_id", values.owner_id);
+      }
+
+      // Add amenities as multiple form entries (avoid JSON-string)
       if (values.amenities && values.amenities.length > 0) {
-        formData.append("amenities", JSON.stringify(values.amenities));
+        values.amenities.forEach((amen) => formData.append("amenities", amen));
       }
 
       // Add files to FormData
@@ -185,7 +230,7 @@ const AdminHotel = () => {
             file.name || `image-${index}.png`
           );
         } else if (file.url && editingHotel) {
-          // Existing files (for update operations)
+          // Existing files (for update operations) - keep previous key name as backend expects
           formData.append("existingImages", file.url);
         }
       });
@@ -500,6 +545,21 @@ const AdminHotel = () => {
             </Form.Item>
           </div>
 
+          {/* Owner select - new */}
+          <Form.Item name="owner_id" label="Owner">
+            <Select placeholder="Select owner" allowClear>
+              {owners.map((o) => (
+                <Select.Option
+                  key={o._id || o.id || o.email}
+                  value={o._id || o.id || o.email}
+                >
+                  {o.username ? `${o.username} (${o.email || ""})` : o.email}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {/* Amenities checkbox group (unchanged UI) */}
           <Form.Item name="amenities" label="Amenities">
             <Checkbox.Group>
               <div className="grid grid-cols-3 gap-2">

@@ -58,19 +58,7 @@ const Header = () => {
           <Link className="hover:text-slate-900 text-slate-600" to="/rooms">
             Rooms
           </Link>
-          <Link className="hover:text-slate-900 text-slate-600" to="#offers">
-            Offers
-          </Link>
-          <Link className="hover:text-slate-900 text-slate-600" to="#dining">
-            Dining
-          </Link>
-          <Link className="hover:text-slate-900 text-slate-600" to="#spa">
-            Spa
-          </Link>
-          <Link className="hover:text-slate-900 text-slate-600" to="#events">
-            Events
-          </Link>
-          <Link className="hover:text-slate-900 text-slate-600" to="#contact">
+          <Link className="hover:text-slate-900 text-slate-600" to="/contact">
             Contact
           </Link>
           {isAdmin && (
@@ -287,19 +275,7 @@ const Header = () => {
             <Link className="py-2" to="/rooms">
               Rooms
             </Link>
-            <Link className="py-2" to="#offers">
-              Offers
-            </Link>
-            <Link className="py-2" to="#dining">
-              Dining
-            </Link>
-            <Link className="py-2" to="#spa">
-              Spa
-            </Link>
-            <Link className="py-2" to="#events">
-              Events
-            </Link>
-            <Link className="py-2" to="#contact">
+            <Link className="py-2" to="/contact">
               Contact
             </Link>
             {isAdmin && (

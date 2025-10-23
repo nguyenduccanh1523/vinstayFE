@@ -22,14 +22,14 @@ const RoomCard = ({ img, title, price }) => (
         </span>
       </div>
       <p className="mt-1 text-sm text-slate-600">City view • King bed • 30m²</p>
-      <button className="mt-4 h-10 w-full rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">
+      {/* <button className="mt-4 h-10 w-full rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">
         <a
           href="/room-detail/1"
           className="block w-full h-full grid place-items-center"
         >
           View Details
         </a>
-      </button>
+      </button> */}
     </div>
   </div>
 );
@@ -55,35 +55,7 @@ const HomePage = () => {
                 rest.
               </p>
               {/* Booking bar */}
-              <form className="mt-6 grid gap-3 sm:grid-cols-5 bg-white/95 backdrop-blur p-3 rounded-2xl border border-white shadow-xl">
-                <input
-                  type="text"
-                  placeholder="Location"
-                  className="h-11 rounded-xl border border-slate-300 px-3 focus:outline-none focus:ring-2 focus:ring-slate-900/60"
-                />
-                <input
-                  type="date"
-                  aria-label="Check-in"
-                  className="h-11 rounded-xl border border-slate-300 px-3 focus:outline-none focus:ring-2 focus:ring-slate-900/60"
-                />
-                <input
-                  type="date"
-                  aria-label="Check-out"
-                  className="h-11 rounded-xl border border-slate-300 px-3 focus:outline-none focus:ring-2 focus:ring-slate-900/60"
-                />
-                <select
-                  aria-label="Guests"
-                  className="h-11 rounded-xl border border-slate-300 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/60"
-                >
-                  <option>2 Guests</option>
-                  <option>1 Guest</option>
-                  <option>3 Guests</option>
-                  <option>4 Guests</option>
-                </select>
-                <button className="h-11 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800">
-                  Search
-                </button>
-              </form>
+              
               <div className="mt-3 text-white/80 text-sm">
                 Rated 4.8/5 by 3,000+ guests • Free cancellation
               </div>

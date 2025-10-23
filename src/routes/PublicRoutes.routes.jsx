@@ -3,6 +3,7 @@ import HotelPage from "../pages/main/HotelPage";
 import RoomPage from "../pages/main/RoomPage";
 import HotelDetail from "../features/HotelFeature/HotelDetail";
 import RoomDetail from "../features/RoomFeature/RoomDetail";
+import ContactPage from "../pages/main/ContactPage"; // <-- added
 import Unauthorized from "../pages/Unauthorized";
 import ProtectedRoute from "../components/ProtectedRoute";
 import BookingPage from "../pages/main/BookingPage";
@@ -46,6 +47,10 @@ const publicRoutes = [
   {
     path: "/notifications",
     element: <Notification />,
+  },
+  {
+    path: "/contact", // <-- new route
+    element: <ContactPage />,
   },
   {
     path: "/unauthorized",
