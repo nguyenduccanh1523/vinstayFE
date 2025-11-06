@@ -57,15 +57,25 @@ const BookingPage = () => {
   };
 
   const isCheckInDatePassed = (checkInDate) => {
+    if (!checkInDate) {
+      // If no check-in date provided, treat as passed to prevent cancellation by default
+      return true;
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const checkIn = new Date(checkInDate);
+    if (isNaN(checkIn.getTime())) {
+      return true;
+    }
     checkIn.setHours(0, 0, 0, 0);
     return checkIn <= today;
   };
 
   const handleCancelBooking = (booking) => {
-    const { _id: bookingId, hotel_id: hotel, check_in_date } = booking;
+    if (!booking) return;
+    const bookingId = booking?._id;
+    const hotelName = booking?.hotel_id?.name || "this hotel";
+    const check_in_date = booking?.check_in_date;
 
     if (isCheckInDatePassed(check_in_date)) {
       toast.warning("Cannot cancel booking - check-in date has passed", {
@@ -82,7 +92,7 @@ const BookingPage = () => {
     confirm({
       title: "Cancel Booking",
       icon: <ExclamationCircleOutlined />,
-      content: `Are you sure you want to cancel your booking at ${hotel.name}?`,
+      content: `Are you sure you want to cancel your booking at ${hotelName}?`,
       okText: "Yes, Cancel",
       okType: "danger",
       cancelText: "No",
@@ -136,7 +146,10 @@ const BookingPage = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    if (!dateString) return "N/A";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -144,25 +157,57 @@ const BookingPage = () => {
   };
 
   const BookingCard = ({ booking }) => {
-    const { hotel_id: hotel, room_id: room } = booking;
+    console.log("Booking details:", booking);
+    if (!booking) return null;
+    // defensive defaults if API returns null for hotel_id or room_id
+    const hotel = booking.hotel_id || {
+      name: "Unknown Hotel",
+      images: ["/placeholder-hotel.jpg"],
+      address: "",
+      city: "",
+      country: "",
+    };
+    const room = booking.room_id || {
+      room_number: "N/A",
+      room_type: "N/A",
+      amenities: [],
+    };
     const canCancel =
       (booking.status === "confirmed" || booking.status === "pending") &&
       !isCheckInDatePassed(booking.check_in_date);
     const checkInPassed = isCheckInDatePassed(booking.check_in_date);
 
+    const getImageSrc = (h) => {
+      // console.log("Hotel images:", h);
+      const imgs = h?.images;
+      if (!imgs || imgs.length === 0) return "/placeholder-hotel.jpg";
+      const first = imgs[0];
+      if (typeof first === "string") return first;
+      if (first?.url) return first.url;
+      if (first?.path) return first.path;
+      return "/placeholder-hotel.jpg";
+    };
+    const imageSrc = getImageSrc(hotel);
+
     return (
       <Card
         className="mb-6 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg overflow-hidden"
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <div className="lg:flex">
           {/* Hotel Image */}
           <div className="lg:w-1/3">
             <Image
-              src={hotel.images?.[0] || "/placeholder-hotel.jpg"}
+              src={imageSrc}
               alt={hotel.name}
-              className="w-full h-48 lg:h-full object-cover"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                minHeight: 192,
+              }}
               fallback="/placeholder-hotel.jpg"
+              preview={false}
             />
           </div>
 
@@ -173,7 +218,7 @@ const BookingPage = () => {
                 <Title level={3} className="mb-2 text-gray-800">
                   {hotel.name}
                 </Title>
-                <Space direction="vertical" size="small" className="mb-4">
+                <Space orientation="vertical" size="small" className="mb-4">
                   <Text className="text-gray-600 flex items-center">
                     <EnvironmentOutlined className="mr-2" />
                     {hotel.address}, {hotel.city}, {hotel.country}
@@ -189,7 +234,7 @@ const BookingPage = () => {
                   color={getStatusColor(booking.status)}
                   className="text-sm px-3 py-1"
                 >
-                  {booking.status.toUpperCase()}
+                  {(booking.status || "unknown").toUpperCase()}
                 </Tag>
                 {checkInPassed && (
                   <Tag color="orange" className="text-sm px-2 py-1 mt-2">
