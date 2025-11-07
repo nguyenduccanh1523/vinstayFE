@@ -7,7 +7,18 @@ const fallbackImg =
 
 export default function RoomCard({ room, search }) {
   // search = {checkIn, checkOut, guests} từ header
-  const state = { room, ...search };
+  const hotelId =
+    room?.hotel_id ||
+    room?.hotel?._id ||
+    room?.hotelId ||
+    room?.property_id ||
+    room?.hotel?.id ||
+    undefined;
+  const hotelObj =
+    room && typeof room.hotel === "object"
+      ? { id: room.hotel._id || room.hotel.id, name: room.hotel.name }
+      : undefined;
+  const state = { room, hotel_id: hotelId, hotel: hotelObj, ...search };
 
   return (
     <div className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300">
@@ -31,7 +42,9 @@ export default function RoomCard({ room, search }) {
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-semibold text-slate-900">{room.name}</h3>
           <div className="text-right">
-            <span className="text-xl font-bold text-slate-900">${room.price}</span>
+            <span className="text-xl font-bold text-slate-900">
+              ${room.price}
+            </span>
             <p className="text-xs text-slate-500">/night</p>
           </div>
         </div>
@@ -50,7 +63,10 @@ export default function RoomCard({ room, search }) {
         {!!room.amenities?.length && (
           <div className="flex flex-wrap gap-2 mb-4">
             {room.amenities.slice(0, 6).map((a, i) => (
-              <span key={i} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg">
+              <span
+                key={i}
+                className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg"
+              >
                 {a}
               </span>
             ))}
@@ -59,14 +75,14 @@ export default function RoomCard({ room, search }) {
 
         <div className="flex gap-2">
           <Link
-            to={`/room-detail/${room.id}`}
+            to={`/room-detail/${room.id || room._id}`}
             state={state}
             className="flex-1 h-10 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 grid place-items-center"
           >
             Book Now
           </Link>
           <Link
-            to={`/room-detail/${room.id}`}
+            to={`/room-detail/${room.id || room._id}`}
             state={state}
             className="h-10 px-4 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 grid place-items-center"
           >
